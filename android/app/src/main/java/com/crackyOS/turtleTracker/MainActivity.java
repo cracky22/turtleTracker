@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
         webView.setWebViewClient(new Callback());
-        webView.loadUrl("file:///android_asset/index.html");
+        webView.loadUrl("https://cracky.ddns.net/turtle/");
         this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
 
