@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schildkrötenstatus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        .switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .status-label {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="switch-container">
+    <label class="switch">
+        <input type="checkbox" id="statusSwitch">
+        <span class="slider"></span>
+    </label>
+    <div class="status-label" id="statusLabel">Laden...</div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusSwitch = document.getElementById('statusSwitch');
+        const statusLabel = document.getElementById('statusLabel');
+
+        function loadStatus() {
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php')
+                .then(response => response.json())
+                .then(data => {
+                    const isOutside = data.status === 'outside';
+                    statusSwitch.checked = isOutside;
+                    statusLabel.textContent = isOutside ? 'Outside' : 'Inside';
+                });
+        }
+
+        loadStatus();
+
+        statusSwitch.addEventListener('change', function () {
+            const newStatus = statusSwitch.checked ? 'outside' : 'inside';
+
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusLabel.textContent = newStatus === 'outside' ? 'Outside' : 'Inside';
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
