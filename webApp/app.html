@@ -10,9 +10,29 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-direction: column;
             height: 100vh;
             margin: 0;
             background-color: #f4f4f4;
+        }
+
+        .name-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .name-container span {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .name-container input {
+            font-size: 24px;
+            padding: 5px;
+            display: none;
+            width: 200px;
         }
 
         .switch-container {
@@ -74,6 +94,11 @@
 </head>
 <body>
 
+<div class="name-container">
+    <span id="nameDisplay">🐢 Unbenannt</span>
+    <input type="text" id="nameInput">
+</div>
+
 <div class="switch-container">
     <label class="switch">
         <input type="checkbox" id="statusSwitch">
@@ -86,18 +111,22 @@
     document.addEventListener("DOMContentLoaded", function () {
         const statusSwitch = document.getElementById('statusSwitch');
         const statusLabel = document.getElementById('statusLabel');
+        const nameDisplay = document.getElementById('nameDisplay');
+        const nameInput = document.getElementById('nameInput');
 
-        function loadStatus() {
+        function loadStatusAndName() {
             fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php')
                 .then(response => response.json())
                 .then(data => {
                     const isOutside = data.status === 'outside';
                     statusSwitch.checked = isOutside;
-                    statusLabel.textContent = isOutside ? 'Outside' : 'Inside';
+                    statusLabel.textContent = isOutside ? 'Draußen' : 'Drinnen';
+                    nameDisplay.textContent = `🐢 ${data.name}`;
+                    nameInput.value = data.name;
                 });
         }
 
-        loadStatus();
+        loadStatusAndName();
 
         statusSwitch.addEventListener('change', function () {
             const newStatus = statusSwitch.checked ? 'outside' : 'inside';
@@ -112,10 +141,49 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    statusLabel.textContent = newStatus === 'outside' ? 'Outside' : 'Inside';
+                    statusLabel.textContent = newStatus === 'outside' ? 'Draußen' : 'Drinnen';
                 }
             });
         });
+
+        nameDisplay.addEventListener('click', function () {
+            nameDisplay.style.display = 'none';
+            nameInput.style.display = 'inline-block';
+            nameInput.focus();
+        });
+
+        nameInput.addEventListener('blur', function () {
+            const newName = nameInput.value.trim() || 'Unbenannt';
+
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `name=${encodeURIComponent(newName)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    nameDisplay.textContent = `🐢 ${newName}`;
+                }
+            });
+
+            nameInput.style.display = 'none';
+            nameDisplay.style.display = 'inline-block';
+        });
+
+        nameInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                nameInput.blur();
+            }
+        });
+    });
+
+    document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) {
+            loadStatusAndName();
+        }
     });
 </script>
 
