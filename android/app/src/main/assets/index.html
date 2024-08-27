@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schildkrötenstatus</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e2122;
+            color: white;
+        }
+
+        .name-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .name-container span {
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .name-container input {
+            font-size: 24px;
+            padding: 5px;
+            display: none;
+            width: 200px;
+        }
+
+        .switch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .status-label {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="name-container">
+    <span id="nameDisplay">🐢 Unbenannt</span>
+    <input type="text" id="nameInput">
+</div>
+
+<div class="switch-container">
+    <label class="switch">
+        <input type="checkbox" id="statusSwitch">
+        <span class="slider"></span>
+    </label>
+    <div class="status-label" id="statusLabel">Laden...</div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusSwitch = document.getElementById('statusSwitch');
+        const statusLabel = document.getElementById('statusLabel');
+        const nameDisplay = document.getElementById('nameDisplay');
+        const nameInput = document.getElementById('nameInput');
+
+        function loadStatusAndName() {
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php')
+                .then(response => response.json())
+                .then(data => {
+                    const isOutside = data.status === 'outside';
+                    statusSwitch.checked = isOutside;
+                    statusLabel.textContent = isOutside ? 'Draußen' : 'Drinnen';
+                    nameDisplay.textContent = `🐢 ${data.name}`;
+                    nameInput.value = data.name;
+                });
+        }
+
+        loadStatusAndName();
+
+        statusSwitch.addEventListener('change', function () {
+            const newStatus = statusSwitch.checked ? 'outside' : 'inside';
+
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `status=${newStatus}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusLabel.textContent = newStatus === 'outside' ? 'Draußen' : 'Drinnen';
+                }
+            });
+        });
+
+        nameDisplay.addEventListener('click', function () {
+            nameDisplay.style.display = 'none';
+            nameInput.style.display = 'inline-block';
+            nameInput.focus();
+        });
+
+        nameInput.addEventListener('blur', function () {
+            const newName = nameInput.value.trim() || 'Unbenannt';
+
+            fetch('https://cracky.ddns.net/services/apps/crackyOS/application/com.crackyOS.tutleTracker/status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `name=${encodeURIComponent(newName)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    nameDisplay.textContent = `🐢 ${newName}`;
+                }
+            });
+
+            nameInput.style.display = 'none';
+            nameDisplay.style.display = 'inline-block';
+        });
+
+        nameInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                nameInput.blur();
+            }
+        });
+    });
+
+    document.addEventListener("visibilitychange", function() {
+        if (!document.hidden) {
+            loadStatusAndName();
+        }
+    });
+</script>
+
+</body>
+</html>
